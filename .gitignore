@@ -1,0 +1,72 @@
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media
+
+# Environnements virtuels
+venv/
+env/
+.env
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Fichiers de configuration IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Fichiers de migration Django
+*/migrations/*.py
+!*/migrations/__init__.py
+
+# Fichiers statiques collectés
+staticfiles/
+
+# Fichiers de sauvegarde
+*.bak
+
+# Fichiers de cache
+*.py[cod]
+*$py.class
+
+# Fichiers de distribution
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+
+# Fichiers de test et de couverture
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Fichiers de documentation
+docs/_build/
+
+# Fichiers de traduction compilés
+*.mo
+
+# Fichiers de dépendances
+pip-log.txt
+pip-delete-this-directory.txt
