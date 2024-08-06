@@ -8,7 +8,7 @@ class ExempleView(BaseView):
         data = {'current_page': 'Exemple'}
         return render(request, self.get_index(self.get_url_element(request,'ressource')), data)
 
-    def display(self, request):
+    def display(self, request, id=None):
         repository = self.get_repository(self.get_url_element(request,'ressource'))
         options = {
             'filters': {'id': self.get_url_element(request,'id')},
@@ -36,3 +36,5 @@ class ExempleView(BaseView):
         if ressource == 'exemples':
             return 'index.html'
         return None
+    
+    
