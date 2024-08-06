@@ -16,7 +16,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from exemple.views import ExempleView  # Added this line per instructions
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('exemple/<str:ressource>/', ExempleView.as_view({'get': 'index'}), name='adm_index'),  # Corrected spelling
+    path('exemple/<str:ressource>/<int:id>/', ExempleView.as_view({'get': 'display'}), name='adm_display'),
+    path('api/exemple/many/<str:ressource>/', ExempleView.as_view({'get': 'get_many'}), name='adm_get_many'),
+    path('api/exemple/one/<str:ressource>/', ExempleView.as_view({'get': 'get_one'}), name='adm_get_one'),
+    path('api/exemple/<str:ressource>/', ExempleView.as_view({'post': 'store'}), name='adm_store'),
+    path('api/exemple/<str:ressource>/<int:id>/', ExempleView.as_view({'put': 'save', 'delete': 'delete'}), name='adm_save'),
 ]

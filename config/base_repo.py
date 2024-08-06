@@ -2,7 +2,10 @@ from django.db import models, transaction
 from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 import json
+from rest_framework import serializers
+from django.db.models import QuerySet
 
 class BaseRepository:
     def __init__(self, model):
@@ -16,6 +19,7 @@ class BaseRepository:
         self.index_route = 'index'
         self.created_message = 'Créé !'
         self.updated_message = 'Mis à jour !'
+        self.serializer = BaseSerializer(self.model)
 
     def get_all(self, options=None):
         if options is None:
@@ -52,7 +56,8 @@ class BaseRepository:
         if 'limit' in options:
             queryset = queryset[:options['limit']]
         
-        result = list(queryset)
+
+        result = self.serializer.serialize_list(queryset)
         
         return {'total': total, 'rows': result} if options.get('count', False) else result
 
@@ -62,9 +67,11 @@ class BaseRepository:
         
         try:
             if fields == ['*']:
-                return self.model.objects.filter(**filters).first()
+                result = self.model.objects.filter(**filters).first()
+                return self.serializer.serialize_list(result)
             else:
-                return self.model.objects.filter(**filters).values(*fields).first()
+                result = self.model.objects.filter(**filters).values(*fields).first()
+                return self.serializer.serialize_list(result)
         except Exception as e:
             raise Exception(f"Erreur lors de la récupération : {str(e)}")
 
@@ -78,12 +85,15 @@ class BaseRepository:
         
         isolated_data = inputs.pop('_isolated_', {})
         
-        instance = self.model.objects.create(**inputs)
         
+        # Valider les données d'entrée
+        instance = self.model(**inputs)
+        instance.save()
+        instance_dict = self.serializer.serialize_list(instance)
         if isolated_data:
             inputs['_isolated_'] = isolated_data
         
-        return self.after_store({'_store_': instance, **inputs})
+        return self.after_store({'_store_': instance_dict, **inputs})
 
     def after_store(self, entity):
         return entity['_store_']
@@ -109,7 +119,7 @@ class BaseRepository:
         if isolated_data:
             inputs['_isolated_'] = isolated_data
         
-        return self.after_save(id, {'_save_': instance, **inputs})
+        return self.after_save(id, {'_save_': self.serializer.serialize_list(instance), **inputs})
 
     def after_save(self, id, inputs):
         return inputs['_save_']
@@ -123,12 +133,13 @@ class BaseRepository:
         options = self.before_delete(id, options)
         
         instance = self.get_one(options)
+        print(instance)
         if not instance:
             raise ObjectDoesNotExist("Instance non trouvée")
         
-        instance.delete()
+        get_object_or_404(self.model, pk=id).delete()
         
-        return self.after_delete(id, instance, options)
+        return self.after_delete(id, self.serializer.serialize_list(instance), options)
 
     def after_delete(self, id, output, options):
         return output
@@ -143,3 +154,23 @@ class BaseRepository:
         self.model.objects.filter(id=id).update(statut='inactif')  # Assurez-vous d'avoir un champ 'statut'
 
 
+class BaseSerializer(serializers.ModelSerializer):
+    def __init__(self, model, *args, **kwargs):
+        self.model = model
+        super().__init__(*args, **kwargs)
+        self.Meta.model = self.model
+        self.Meta.fields = '__all__'
+
+    class Meta:
+        model = None
+        fields = None
+
+    @classmethod
+    def serialize_list(cls, object_list):
+        serializer = cls(model=cls.Meta.model)
+        return serializer.to_representation(object_list)
+
+    def to_representation(self, instance):
+        if isinstance(instance, QuerySet):
+            return [super().to_representation(item) for item in instance]
+        return super().to_representation(instance)
